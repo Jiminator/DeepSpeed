@@ -904,6 +904,11 @@ def _patch_functionals():
     if hasattr(F, "silu"):
         F.silu = wrapFunc(F.silu, _silu_flops_compute)
     F.gelu = wrapFunc(F.gelu, _gelu_flops_compute)
+    # if not getattr(self, 'bias_gelu_fusion', False):
+        # F.gelu = wrapFunc(F.gelu, _gelu_flops_compute)
+    # else:
+        # Optionally log that F.gelu was not patched due to bias_gelu_fusion
+        # logger.info("Skipping F.gelu patch due to bias_gelu_fusion being enabled.")
 
     # Normalizations
     F.batch_norm = wrapFunc(F.batch_norm, _batch_norm_flops_compute)
@@ -984,6 +989,7 @@ def _reload_functionals():
     if hasattr(F, "silu"):
         F.silu = old_functions[F.silu.__str__]
     F.gelu = old_functions[F.gelu.__str__]
+    # F.gelu = old_functions.get(F.gelu.__str__, F.gelu)
     F.batch_norm = old_functions[F.batch_norm.__str__]
     F.layer_norm = old_functions[F.layer_norm.__str__]
     F.instance_norm = old_functions[F.instance_norm.__str__]

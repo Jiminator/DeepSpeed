@@ -373,9 +373,21 @@ class PipelineEngine(DeepSpeedEngine):
                 self.global_steps):
                 self.reset_activation_shape()
 
+        # print("DO I GET HERE")
+        # see_memory_usage("Engine before step", force=self.memory_breakdown())
+        # # Check early because self.global_steps is incremented at some point here.
+        # flops_profiler_active = self.flops_profiler_enabled() and self.global_steps == self.flops_profiler_profile_step() and self.global_rank == 0
+        # if flops_profiler_active:
+        #     self.flops_profiler.start_profile(ignore_list=None)
+        # print(self.flops_profiler.started)
+        # print("DO I GET HERE")
         if data_iter is not None:
             self.set_dataiterator(data_iter)
 
+        # flops_profiler_active = (self.flops_profiler_enabled()
+        #                          and self.global_steps == self.flops_profiler_profile_step() and self.global_rank == 0)
+        # if flops_profiler_active:
+        #     self.flops_profiler.start_profile(ignore_list=None)  
         self.module.train()
         self.total_loss = None
         self.total_additional_losses = None
@@ -388,10 +400,48 @@ class PipelineEngine(DeepSpeedEngine):
                                        stage_id=self.stage_id)
         self._exec_schedule(sched)
 
+        # print("DO I GET HERE")
+        # print(self.flops_profiler.ds_engine)
+        # print("DS_ENGINE IS TURNED ON")
+        # if self.flops_profiler.ds_engine:
+        #     print(self.flops_profiler.ds_engine.wall_clock_breakdown())
+        # if self.flops_profiler.ds_engine and self.flops_profiler.ds_engine.wall_clock_breakdown():
+        #     print("GETTING FWD LATENCY")
+        #     fwd_latency = self.flops_profiler.ds_engine.timers(FORWARD_GLOBAL_TIMER).elapsed(False) / 1000.0
+        #     print("FWD LATENCY:", fwd_latency)
+        # if flops_profiler_active:
+        #     self.flops_profiler.end_profile()
+        # print("DO I GET HERE")
+        # if flops_profiler_active:
+        #     if self.autotuning_enabled():
+        #         self.flops = self.flops_profiler.get_total_flops() * 3
+        #         self.fwd_duration = self.flops_profiler.get_total_duration()
+        #     else:
+        #         self.flops_profiler.print_model_profile(
+        #             profile_step=self.global_steps,
+        #             module_depth=self.flops_profiler_module_depth(),
+        #             top_modules=self.flops_profiler_top_modules(),
+        #             detailed=self.flops_profiler_detailed(),
+        #             output_file=self.flops_profiler_output_file(),
+        #         )
+        #     self.flops_profiler.end_profile()
+        # print("DO I GET HERE")
+        # print("TESTING FWD LATENCY 1")
+        # print(self.flops_profiler.ds_engine)
+        # print("DS_ENGINE IS TURNED ON")
+        # if self.flops_profiler.ds_engine:
+        #     print(self.flops_profiler.ds_engine.wall_clock_breakdown())
+        # if self.flops_profiler.ds_engine and self.flops_profiler.ds_engine.wall_clock_breakdown():
+        #     print("GETTING FWD LATENCY")
+        #     fwd_latency = self.flops_profiler.ds_engine.timers(FORWARD_GLOBAL_TIMER).elapsed(False) / 1000.0
+        #     print("FWD LATENCY:", fwd_latency)
+        # print("END TESTING FWD LATENCY 1")
         with torch.no_grad():
             self.agg_train_loss = self._aggregate_total_loss()
 
         self.timers(TRAIN_BATCH_TIMER).stop()
+        # if flops_profiler_active:
+        #     self.flops_profiler.stop_profile()
 
         if self.global_steps % self.steps_per_print() == 0:
             if self.global_rank == 0:
@@ -406,6 +456,8 @@ class PipelineEngine(DeepSpeedEngine):
                 print(log_str)
             else:
                 self.timers(TRAIN_BATCH_TIMER).elapsed(reset=True)
+        # if flops_profiler_active:
+        #     self.flops_profiler.stop_profile()
 
         # Monitoring
         if self.global_rank == 0 and self.monitor.enabled:
@@ -420,6 +472,19 @@ class PipelineEngine(DeepSpeedEngine):
                 PIPE_RECV_INPUT_TIMER,
                 PIPE_RECV_GRAD_TIMER,
             ])
+        # if flops_profiler_active:
+        #     if self.autotuning_enabled():
+        #         self.flops = self.flops_profiler.get_total_flops() * 3
+        #         self.fwd_duration = self.flops_profiler.get_total_duration()
+        #     else:
+        #         self.flops_profiler.print_model_profile(
+        #             profile_step=self.global_steps,
+        #             module_depth=self.flops_profiler_module_depth(),
+        #             top_modules=self.flops_profiler_top_modules(),
+        #             detailed=self.flops_profiler_detailed(),
+        #             output_file=self.flops_profiler_output_file(),
+        #         )
+        #     self.flops_profiler.end_profile()
 
         # TODO: should return precisely what loss returned and allow others to be queried?
         return self.agg_train_loss
@@ -1217,6 +1282,15 @@ class PipelineEngine(DeepSpeedEngine):
         if self.wall_clock_breakdown():
             self.timers(STEP_MICRO_TIMER).start()
             self.timers(STEP_GLOBAL_TIMER).start()
+        # print("DO I GET HERE")
+        # see_memory_usage("Engine before step", force=self.memory_breakdown())
+        # # Check early because self.global_steps is incremented at some point here.
+        # flops_profiler_active = self.flops_profiler_enabled() and self.global_steps == self.flops_profiler_profile_step() and self.global_rank == 0
+        # if flops_profiler_active:
+        #     print('FLOPS PROFILE ACTIVE')
+        #     self.flops_profiler.start_profile(ignore_list=None)
+        # print(self.flops_profiler.started)
+        # print("DO I GET HERE")
         self.mem_status('BEFORE STEP', reset_max=True)
 
         self._force_grad_boundary = True
@@ -1231,6 +1305,21 @@ class PipelineEngine(DeepSpeedEngine):
                 self.summary_events.append(
                     (f'Train/Samples/loss_scale', self.optimizer.cur_scale, self.global_samples))
             self.monitor.write_events(self.summary_events)
+        # if flops_profiler_active:
+        #     self.flops_profiler.stop_profile()
+        # if flops_profiler_active:
+        #     if self.autotuning_enabled():
+        #         self.flops = self.flops_profiler.get_total_flops() * 3
+        #         self.fwd_duration = self.flops_profiler.get_total_duration()
+        #     else:
+        #         self.flops_profiler.print_model_profile(
+        #             profile_step=self.global_steps,
+        #             module_depth=self.flops_profiler_module_depth(),
+        #             top_modules=self.flops_profiler_top_modules(),
+        #             detailed=self.flops_profiler_detailed(),
+        #             output_file=self.flops_profiler_output_file(),
+        #         )
+        #     self.flops_profiler.end_profile()
 
         if self.wall_clock_breakdown():
             self.timers(STEP_MICRO_TIMER).stop()
